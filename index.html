@@ -126,10 +126,11 @@
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 12px;
+      cursor: pointer;
     }
     .pad-container {
       background: #090d16;
-      padding: 8px 8px 90px 8px; /* 下部余白90px */
+      padding: 8px 8px 90px 8px; /* フローティングボタン対策のボトム余白90px */
       border-top: 1px solid var(--border);
     }
     .row-selector {
@@ -149,6 +150,7 @@
       border-radius: 6px;
       font-size: 12px;
       text-align: center;
+      cursor: pointer;
     }
     .row-btn.active {
       background: var(--accent);
@@ -178,22 +180,25 @@
     }
     .ctrl-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: 1fr 2fr;
       gap: 6px;
     }
     .ctrl-btn {
       background: #334155;
       border: none;
       color: #fff;
-      padding: 10px 0;
+      padding: 12px 0;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 15px;
+      font-weight: bold;
       text-align: center;
+      cursor: pointer;
+    }
+    .ctrl-btn:active {
+      background: #475569;
     }
     .submit-btn {
-      grid-column: span 2;
       background: #0284c7;
-      font-weight: bold;
     }
   </style>
 </head>
@@ -228,8 +233,7 @@
     <div class="row-selector" id="row-selector"></div>
     <div class="char-grid" id="char-grid"></div>
     <div class="ctrl-grid">
-      <button class="ctrl-btn" onclick="addDaku(1)">濁点 ゛</button>
-      <button class="ctrl-btn" onclick="addDaku(2)">半濁点 ゜</button>
+      <button class="ctrl-btn" onclick="toggleTransform()">゛゜小</button>
       <button class="ctrl-btn submit-btn" onclick="submitWord()">送信</button>
     </div>
   </div>
@@ -245,10 +249,9 @@
       'ま行': ['ま','み','む','め','も'],
       'や行': ['や','ゆ','よ'],
       'ら行': ['ら','り','る','れ','ろ'],
-      'わ行': ['わ','を','ん']
+      'わ行': ['わ','を','ん','ー']
     };
 
-    // 一般的な名詞のみを厳選したCPU辞書
     const DICT = [
       "りんご","りす","りぼん","りゅう","りか","らいおん","らくだ","らっこ","らっぱ",
       "すいか","すずめ","すし","すみれ","さくら","さかな","さる","さとう",
@@ -318,15 +321,49 @@
       document.getElementById('input-view').innerText = currentInput;
     }
 
-    function addDaku(type) {
+    // 1つのボタンで「清音➔濁点➔半濁点➔小文字➔清音」を順番に切り替えるトグル処理
+    function toggleTransform() {
       if (!currentInput) return;
       let last = currentInput.slice(-1);
-      const dakuMap = {'か':'が','き':'ぎ','く':'ぐ','け':'げ','こ':'ご','さ':'ざ','し':'じ','す':'ず','せ':'ぜ','そ':'ぞ','た':'だ','ち':'ぢ','つ':'づ','て':'で','と':'ど','は':'ば','ひ':'び','ふ':'ぶ','へ':'べ','ほ':'ぼ'};
-      const handakuMap = {'は':'ぱ','ひ':'ぴ','ふ':'ぷ','へ':'ぺ','ほ':'ぽ'};
-      
-      let converted = type === 1 ? dakuMap[last] : handakuMap[last];
-      if (converted) {
-        currentInput = currentInput.slice(0, -1) + converted;
+
+      const cycleMap = {
+        // か行
+        'か':'が', 'が':'か',
+        'き':'ぎ', 'ぎ':'き',
+        'く':'ぐ', 'ぐ':'く',
+        'け':'げ', 'げ':'け',
+        'こ':'ご', 'ご':'こ',
+        // さ行
+        'さ':'ざ', 'ざ':'さ',
+        'し':'じ', 'じ':'し',
+        'す':'ず', 'ず':'す',
+        'せ':'ぜ', 'ぜ':'せ',
+        'そ':'ぞ', 'ぞ':'そ',
+        // た行
+        'た':'だ', 'だ':'た',
+        'ち':'ぢ', 'ぢ':'ち',
+        'つ':'づ', 'づ':'っ', 'っ':'つ',
+        'て':'で', 'で':'て',
+        'と':'ど', 'ど':'と',
+        // は行（濁点 ➔ 半濁点 ➔ 清音）
+        'は':'ば', 'ば':'ぱ', 'ぱ':'は',
+        'ひ':'び', 'び':'ぴ', 'ぴ':'ひ',
+        'ふ':'ぶ', 'ぶ':'ぷ', 'ぷ':'ふ',
+        'へ':'べ', 'べ':'ぺ', 'ぺ':'へ',
+        'ほ':'ぼ', 'ぼ':'ぽ', 'ぽ':'ほ',
+        // 母音・や行（大文字 ➔ 小文字 ➔ 大文字）
+        'あ':'ぁ', 'ぁ':'あ',
+        'い':'ぃ', 'ぃ':'い',
+        'う':'ぅ', 'ぅ':'う',
+        'え':'ぇ', 'ぇ':'え',
+        'お':'ぉ', 'ぉ':'お',
+        'や':'ゃ', 'ゃ':'や',
+        'ゆ':'ゅ', 'ゅ':'ゆ',
+        'よ':'ょ', 'ょ':'よ'
+      };
+
+      if (cycleMap[last]) {
+        currentInput = currentInput.slice(0, -1) + cycleMap[last];
         document.getElementById('input-view').innerText = currentInput;
       }
     }
@@ -347,7 +384,6 @@
         return;
       }
 
-      // 成功
       usedWords.add(currentInput);
       addMsg(currentInput, 'user');
       
