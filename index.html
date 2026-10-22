@@ -41,6 +41,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
     .title {
       font-size: 18px;
@@ -64,6 +65,7 @@
       background: #0284c715;
       border-bottom: 1px solid var(--border);
       font-size: 13px;
+      flex-shrink: 0;
     }
     .stat-val {
       font-weight: bold;
@@ -104,34 +106,59 @@
       text-decoration: underline;
       cursor: pointer;
     }
+    /* 入力エリアの明確な可視化とスタイル設定 */
     .input-display {
-      background: var(--card-bg);
-      border-top: 1px solid var(--border);
+      background: #0f172a;
+      border-top: 2px solid var(--accent);
+      border-bottom: 1px solid var(--border);
       padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      min-height: 56px;
+      flex-shrink: 0;
+    }
+    .current-text-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      margin-right: 12px;
+      overflow-x: auto;
     }
     .current-text {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: bold;
       letter-spacing: 2px;
-      min-height: 28px;
-      color: #fff;
+      color: #38bdf8;
+      min-height: 30px;
+      line-height: 30px;
+      white-space: nowrap;
+    }
+    .placeholder-text {
+      color: var(--subtext);
+      font-size: 14px;
+      font-weight: normal;
+      letter-spacing: normal;
     }
     .action-btn {
       background: #ef4444;
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: bold;
       cursor: pointer;
+      flex-shrink: 0;
+    }
+    .action-btn:active {
+      background: #dc2626;
     }
     .pad-container {
       background: #090d16;
-      padding: 8px 8px 90px 8px; /* フローティングボタン対策のボトム余白90px */
+      padding: 8px 8px 90px 8px; /* スマホ浮遊ボタン対策のボトム余白90px */
       border-top: 1px solid var(--border);
+      flex-shrink: 0;
     }
     .row-selector {
       display: flex;
@@ -224,8 +251,11 @@
     </div>
   </div>
 
+  <!-- 入力可視化エリア -->
   <div class="input-display">
-    <div class="current-text" id="input-view"></div>
+    <div class="current-text-container">
+      <div class="current-text" id="input-view"></div>
+    </div>
     <button class="action-btn" onclick="clearInput()">一字削除</button>
   </div>
 
@@ -272,6 +302,7 @@
       renderRowSelector();
       renderCharGrid();
       updateTargetRow();
+      updateInputDisplay();
     }
 
     function renderRowSelector() {
@@ -299,7 +330,7 @@
         btn.innerText = char;
         btn.onclick = () => {
           currentInput += char;
-          document.getElementById('input-view').innerText = currentInput;
+          updateInputDisplay();
         };
         grid.appendChild(btn);
       });
@@ -316,42 +347,47 @@
       }
     }
 
-    function clearInput() {
-      currentInput = currentInput.slice(0, -1);
-      document.getElementById('input-view').innerText = currentInput;
+    function updateInputDisplay() {
+      const view = document.getElementById('input-view');
+      if (currentInput === "") {
+        view.innerHTML = `<span class="placeholder-text">「${targetChar}」から入力...</span>`;
+      } else {
+        view.innerText = currentInput;
+      }
     }
 
-    // 1つのボタンで「清音➔濁点➔半濁点➔小文字➔清音」を順番に切り替えるトグル処理
+    function clearInput() {
+      if (currentInput.length > 0) {
+        currentInput = currentInput.slice(0, -1);
+        updateInputDisplay();
+      }
+    }
+
     function toggleTransform() {
       if (!currentInput) return;
       let last = currentInput.slice(-1);
 
       const cycleMap = {
-        // か行
         'か':'が', 'が':'か',
         'き':'ぎ', 'ぎ':'き',
         'く':'ぐ', 'ぐ':'く',
         'け':'げ', 'げ':'け',
         'こ':'ご', 'ご':'こ',
-        // さ行
         'さ':'ざ', 'ざ':'さ',
         'し':'じ', 'じ':'し',
         'す':'ず', 'ず':'す',
         'せ':'ぜ', 'ぜ':'せ',
         'そ':'ぞ', 'ぞ':'そ',
-        // た行
         'た':'だ', 'だ':'た',
         'ち':'ぢ', 'ぢ':'ち',
         'つ':'づ', 'づ':'っ', 'っ':'つ',
         'て':'で', 'で':'て',
         'と':'ど', 'ど':'と',
-        // は行（濁点 ➔ 半濁点 ➔ 清音）
         'は':'ば', 'ば':'ぱ', 'ぱ':'は',
         'ひ':'び', 'び':'ぴ', 'ぴ':'ひ',
         'ふ':'ぶ', 'ぶ':'ぷ', 'ぷ':'ふ',
         'へ':'べ', 'べ':'ぺ', 'ぺ':'へ',
         'ほ':'ぼ', 'ぼ':'ぽ', 'ぽ':'ほ',
-        // 母音・や行（大文字 ➔ 小文字 ➔ 大文字）
         'あ':'ぁ', 'ぁ':'あ',
         'い':'ぃ', 'ぃ':'い',
         'う':'ぅ', 'ぅ':'う',
@@ -364,7 +400,7 @@
 
       if (cycleMap[last]) {
         currentInput = currentInput.slice(0, -1) + cycleMap[last];
-        document.getElementById('input-view').innerText = currentInput;
+        updateInputDisplay();
       }
     }
 
@@ -393,7 +429,7 @@
       document.getElementById('target-char').innerText = targetChar;
       
       currentInput = "";
-      document.getElementById('input-view').innerText = "";
+      updateInputDisplay();
       updateTargetRow();
 
       if (isCpuMode) {
@@ -454,7 +490,7 @@
       currentInput = "";
       document.getElementById('turn-count').innerText = 1;
       document.getElementById('target-char').innerText = "り";
-      document.getElementById('input-view').innerText = "";
+      updateInputDisplay();
       document.getElementById('chat-area').innerHTML = `
         <div class="msg-bubble msg-cpu">
           【スタート】しりとり<br>
